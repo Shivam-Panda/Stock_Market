@@ -8,6 +8,10 @@ export class Company extends BaseEntity {
     @PrimaryGeneratedColumn()
     id: number;
 
+    @Field(() => String)
+    @Column()
+    name: string;
+
     @Field(() => Int)
     @Column("int")
     revenue: number;
@@ -20,15 +24,15 @@ export class Company extends BaseEntity {
     @Column("int")
     issued: number;
 
+    @Field(() => [Int])
+    @Column("simple-array")
+    bought: Array<number>;
+
     @Field(() => Int)
     @Column("int")
-    bought: number;
-
-    @Field(() => String)
-    @Column()
-    key: string;
+    key: number;
 
     @Field(() => Boolean)
-    @Column("bool")
+    @Column("boolean")
     good: boolean
 }

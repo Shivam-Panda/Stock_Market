@@ -8,9 +8,9 @@ export class User extends BaseEntity {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @Field()
-  @Column()
-  key: string;
+  @Field(() => Int)
+  @Column("int")
+  key: number;
 
   @Field()
   @Column()
@@ -20,7 +20,7 @@ export class User extends BaseEntity {
   @Column("int")
   total: number;
 
-  @Field(() => [String])
-  @Column()
-  transactions: Array<string>
+  @Field(() => [Int])
+  @Column("simple-array")
+  transactions: Array<number>
 }
