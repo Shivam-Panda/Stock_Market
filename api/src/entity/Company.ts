@@ -24,9 +24,9 @@ export class Company extends BaseEntity {
     @Column("int")
     issued: number;
 
-    @Field(() => [Int])
-    @Column("simple-array")
-    bought: Array<number>;
+    @Field(() => Int)
+    @Column("int")
+    bought: number;
 
     @Field(() => Int)
     @Column("int")
@@ -35,4 +35,8 @@ export class Company extends BaseEntity {
     @Field(() => Boolean)
     @Column("boolean")
     good: boolean
+
+    @Field(() => [Int])
+    @Column("simple-array")
+    owned: Array<number>
 }

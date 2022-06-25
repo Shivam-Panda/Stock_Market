@@ -23,4 +23,8 @@ export class User extends BaseEntity {
   @Field(() => [Int])
   @Column("simple-array")
   transactions: Array<number>
+
+  @Field(() => [Int])
+  @Column("simple-array")
+  owned: Array<number>
 }

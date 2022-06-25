@@ -4,7 +4,7 @@ import { User } from '../entity/User';
 
 import { Company } from '../entity/Company';
 
-const hashCode = (str: string) => {
+export const hashCode = (str: string) => {
     var hash = 0, i = 0, len = str.length;
     while ( i < len ) {
         hash  = ((hash << 5) - hash + str.charCodeAt(i++)) << 0;
@@ -71,7 +71,8 @@ export class AuthResolver {
             key,
             name: input.name,
             total: input.total,
-            transactions: []
+            transactions: [],
+            owned: []
         }).save();
         if(us != null) {
             return true;
@@ -86,13 +87,14 @@ export class AuthResolver {
     ) {
         const key = hashCode(input.password);
         const comp = await Company.create({
-            cost: input.production_cost,
-            bought: [],
-            issued: 0,
-            revenue: input.beginning_revenue,
             key,
+            name: input.name,
+            revenue: input.beginning_revenue,
+            issued: 0,
+            owned: [],
+            cost: input.production_cost,
             good: input.good,
-            name: input.name
+            bought: 0
         }).save();
         if(comp != null) {
             return true;
