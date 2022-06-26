@@ -9,10 +9,14 @@ export class Share extends BaseEntity {
     id: number;
 
     @Field(() => Int)
+    @Column("int")
+    user: number;
+
+    @Field(() => Int)
     @Column()
     amount: number
 
     @Field(() => String)
-    @Column("string")
-    company: string;
+    @Column("int")
+    company: number;
 }
