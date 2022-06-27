@@ -37,6 +37,6 @@ export class Company extends BaseEntity {
     good: boolean
 
     @Field(() => [Int])
-    @Column("simple-array")
+    @Column("simple-array", {nullable: true})
     owned: Array<number>
 }

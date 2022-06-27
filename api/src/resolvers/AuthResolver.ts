@@ -43,15 +43,6 @@ class CreateCompanyInput {
 }
 
 @InputType()
-class CompanyInput {
-    @Field(() => String)
-    name: string;
-
-    @Field(() => String)
-    password: string;
-}
-
-@InputType()
 class LoginInput {
     @Field(() => String)
     name: string;
@@ -62,7 +53,7 @@ class LoginInput {
 
 @Resolver()
 export class AuthResolver {
-    @Mutation(() => Boolean)
+    @Mutation(() => User!)
     async createUser(
         @Arg("input", () => CreateUserInput) input: CreateUserInput
     ) {
@@ -75,13 +66,13 @@ export class AuthResolver {
             owned: []
         }).save();
         if(us != null) {
-            return true;
+            return us;
         } else {
-            return false;
+            return null;
         }
     }
 
-    @Mutation(() => Boolean)
+    @Mutation(() => Company!)
     async createCompany(
         @Arg("input", () => CreateCompanyInput) input: CreateCompanyInput 
     ) {
@@ -97,25 +88,13 @@ export class AuthResolver {
             bought: 0
         }).save();
         if(comp != null) {
-            return true;
+            return comp;
         } else {
-            return false;
+            return null;
         }
     }
 
-    @Query(() => Company!)
-    async getCompany(
-        @Arg("input", () => CompanyInput) input: CompanyInput
-    ) {
-        const key = hashCode(input.password);
-        const comp = await Company.findOne({
-            name: input.name,
-            key
-        });
-        return comp;
-    }
-
-    @Query(() => Boolean)
+    @Query(() => User!)
     async login(
         @Arg("input", () => LoginInput) input: LoginInput
     ) {
@@ -125,18 +104,17 @@ export class AuthResolver {
             key
         });
         if(user != null) {
-            return true;
+            return user;
         } else {
-            return false;
+            return null
         }
     }
 
     @Query(() => User!)
     async getUser(
-        @Arg("id", () => Int) id: number 
+        @Arg("name", () => String) name: string 
     ) {
-        const user = await User.findOne({ id });
-        console.log(user);
+        const user = await User.findOne({ name });
         return user;
     }
 
@@ -144,10 +122,29 @@ export class AuthResolver {
     async allUsers() {
         return await User.find();
     }
+
+    @Query(() => [Company]!)
+    async allCompanies() {
+        return await Company.find();
+    }
     
     @Mutation(() => Boolean)
     async reset() {
         await User.delete({});
         return true;
+    }
+
+    @Query(() => Company!)
+    async getCompany(
+        @Arg("name", () => String) name: string
+    ) {
+        const comp = await Company.findOne({
+            name
+        });
+        if(comp) {
+            return comp;
+        } else {
+            return null;
+        }
     }
 }

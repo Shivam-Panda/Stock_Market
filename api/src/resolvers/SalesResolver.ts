@@ -1,9 +1,9 @@
-import { Company } from "src/entity/Company";
-import { Sale } from "src/entity/Sale";
-import { Share } from "src/entity/Shares";
-import { Transaction } from "src/entity/Transaction";
-import { User } from "src/entity/User";
-import { Arg, Field, InputType, Int, Mutation, Resolver } from "type-graphql";
+import { Arg, Field, InputType, Int, Mutation, Query, Resolver } from "type-graphql";
+import { Company } from "../entity/Company";
+import { Sale } from "../entity/Sale";
+import { Share } from "../entity/Shares";
+import { Transaction } from "../entity/Transaction";
+import { User } from "../entity/User";
 import { hashCode } from "./AuthResolver";
 
 @InputType()
@@ -48,6 +48,18 @@ class BuyShareCompanyInput {
     amount: number;
 }
 
+@InputType()
+class BuyShareInput {
+    @Field(() => String)
+    name: string
+
+    @Field(() => String)
+    password: string
+
+    @Field(() => Int)
+    sale: number
+}
+
 export const share_value = (c: Company, amount: number): number => {
     const rev = c.revenue;
     const shares = c.issued;
@@ -69,6 +81,11 @@ export class SalesResolver {
             key
         });
         if(comp) {
+            await Sale.create({
+                seller: comp.id,
+                share_amount: input.issue,
+                company: comp.id
+            }).save();
             await Company.update({
                 name: input.name
             }, {
@@ -84,15 +101,23 @@ export class SalesResolver {
     async buySharesCompany(
         @Arg("input", () => BuyShareCompanyInput) input: BuyShareCompanyInput
     ) {
-        const comp = await Company.findOne({
-            name: input.company_name
-    });
         const key = hashCode(input.password);
-        const user = await User.findOne(({
+        const user = await User.findOne({
             name: input.name,
             key
-        }));
-        if(comp && user) {
+        });
+        if(user == undefined) {
+            console.log('Return for User')
+            return false;
+        }
+        else {
+            const comp = await Company.findOne({
+                name: input.company_name
+            });
+            if(comp == undefined) {
+                console.log('Return for Comp')
+                return false;
+            }
             const left = comp.issued - comp.bought;
             if(left > input.amount) {
                 return false;
@@ -123,9 +148,15 @@ export class SalesResolver {
                 transactions,
                 total: user.total - cost
             });
+
+            await Company.update({
+                name: comp.name
+            }, {
+                bought: comp.bought + input.amount,
+                revenue: comp.revenue + cost
+            })
+            console.log('Regular Return')
             return true;
-        } else {
-            return false;
         }
     }
 
@@ -152,7 +183,7 @@ export class SalesResolver {
             for(let i = 0; i < owned.length; i++) {
                 let o = owned[i]
                 if(o.amount >= input.amount) {
-                    const s = await Sale.create({
+                    await Sale.create({
                         seller: user.id,
                         company: comp.id,
                         share_amount: input.amount
@@ -169,5 +200,73 @@ export class SalesResolver {
         } else {
             return false;
         }
+    }
+
+    @Mutation(() => Boolean)
+    async reset() {
+        await Company.delete({});
+        await Sale.delete({});
+        await Share.delete({});
+        await Transaction.delete({});
+        await User.delete({});
+        return true;
+    }
+
+    @Mutation(() => Boolean)
+    async buyShare(
+        @Arg("input", () => BuyShareInput) input: BuyShareInput
+    ) {
+        const key = hashCode(input.password);
+        const buyer = await User.findOne({
+            name: input.name,
+            key
+        });
+        const sale = await Sale.findOne({ id: input.sale });
+        if(buyer && sale) {
+            const seller = await User.findOne({
+                id: sale.seller
+            });
+            if(seller) {
+                const t = await Transaction.create({
+                    seller: seller.id,
+                    buyer: buyer.id,
+                    company: sale.company,
+                    share_amount: sale.share_amount
+                });
+                const t_id = t.id;
+                t.save();
+                const c = await Company.findOne({
+                    id: sale.company
+                });
+                if(c == undefined) {
+                    return false;
+                }
+                const cost = share_value(c, sale.share_amount);
+                const seller_trans = seller.transactions;
+                const bought_trans = buyer.transactions;
+                seller_trans.push(t_id)
+                bought_trans.push(t_id)
+                await User.update({
+                    id: buyer.id
+                }, {
+                    transactions: bought_trans,
+                    total: buyer.total - cost
+                });
+                await User.update({
+                    id: seller.id,
+                }, {
+                    transactions: seller_trans,
+                    total: seller.total + cost
+                })
+                return true;
+            }
+            return false;
+        }
+        return false;
+    }
+
+    @Query(() => [Sale])
+    async getAllSales() {
+        return await Sale.find();
     }
 }

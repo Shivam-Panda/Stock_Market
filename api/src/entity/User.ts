@@ -21,10 +21,10 @@ export class User extends BaseEntity {
   total: number;
 
   @Field(() => [Int])
-  @Column("simple-array")
+  @Column("simple-array", { nullable: true })
   transactions: Array<number>
 
   @Field(() => [Int])
-  @Column("simple-array")
+  @Column("simple-array", { nullable: true })
   owned: Array<number>
 }
