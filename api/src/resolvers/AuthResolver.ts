@@ -30,6 +30,9 @@ class CreateCompanyInput {
     production_cost: number
 
     @Field(() => Int)
+    marginal_revenue: number
+
+    @Field(() => Int)
     beginning_revenue: number
 
     @Field(() => String)
@@ -57,6 +60,12 @@ export class AuthResolver {
     async createUser(
         @Arg("input", () => CreateUserInput) input: CreateUserInput
     ) {
+        const u = await User.findOne({
+            name: input.name
+        })
+        if(u) {
+            return null;
+        }
         const key = hashCode(input.password);
         const us = await User.create({
             key,
@@ -76,6 +85,12 @@ export class AuthResolver {
     async createCompany(
         @Arg("input", () => CreateCompanyInput) input: CreateCompanyInput 
     ) {
+        const c = await Company.findOne({
+            name: input.name 
+        });
+        if(c) {
+            return null;
+        }
         const key = hashCode(input.password);
         const comp = await Company.create({
             key,
@@ -85,7 +100,8 @@ export class AuthResolver {
             owned: [],
             cost: input.production_cost,
             good: input.good,
-            bought: 0
+            bought: 0,
+            marginal_revenue: input.marginal_revenue
         }).save();
         if(comp != null) {
             return comp;
@@ -115,6 +131,7 @@ export class AuthResolver {
         @Arg("name", () => String) name: string 
     ) {
         const user = await User.findOne({ name });
+        console.log(user);
         return user;
     }
 

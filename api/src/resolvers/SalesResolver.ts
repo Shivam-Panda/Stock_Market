@@ -66,7 +66,7 @@ export const share_value = (c: Company, amount: number): number => {
 
     const ind_val = rev / shares;
 
-    return ind_val * amount;
+    return Math.round(ind_val * amount);
 }
 
 @Resolver()
@@ -110,54 +110,55 @@ export class SalesResolver {
             console.log('Return for User')
             return false;
         }
-        else {
-            const comp = await Company.findOne({
-                name: input.company_name
-            });
-            if(comp == undefined) {
-                console.log('Return for Comp')
-                return false;
-            }
-            const left = comp.issued - comp.bought;
-            if(left > input.amount) {
-                return false;
-            }
-            const s = await Share.create({
-                user: user.id,
-                amount: input.amount,
-                company: comp.id
-            });
-            s.save();
-            const t = await Transaction.create({
-                seller: comp.id,
-                company: comp.id,
-                buyer: user.id,
-                share_amount: input.amount
-            })
-            const owned = user.owned;
-            owned.push(s.id);
-            const transactions = user.transactions;
-            transactions.push(t.id)
-
-            const cost = share_value(comp, input.amount);
-
-            await User.update({
-                name: input.name
-            }, {
-                owned,
-                transactions,
-                total: user.total - cost
-            });
-
-            await Company.update({
-                name: comp.name
-            }, {
-                bought: comp.bought + input.amount,
-                revenue: comp.revenue + cost
-            })
-            console.log('Regular Return')
-            return true;
+        const comp = await Company.findOne({
+            name: input.company_name
+        });
+        if(comp == undefined) {
+            console.log('Return for Comp')
+            return false;
         }
+        console.log(comp.issued)
+        console.log(comp.bought);
+        const left = comp.issued - comp.bought;
+        if(left < input.amount) {
+            console.log('Issues Issue')
+            return false;
+        }
+        const s = await Share.create({
+            user: user.id,
+            amount: input.amount,
+            company: comp.id
+        }).save();
+        const t = await Transaction.create({
+            seller: comp.id,
+            company: comp.id,
+            buyer: user.id,
+            share_amount: input.amount
+        }).save()
+        console.log(s.id);
+        console.log(t.id);
+        const owned = user.owned;
+        owned.push(s.id);
+        const transactions = user.transactions;
+        transactions.push(t.id)
+
+        const cost = share_value(comp, input.amount);
+
+        await User.update({
+            name: input.name
+        }, {
+            owned,
+            transactions,
+            total: user.total - cost
+        });
+
+        await Company.update({
+            name: comp.name
+        }, {
+            bought: comp.bought + input.amount,
+            revenue: comp.revenue + cost
+        })
+        return true;
     }
 
     @Mutation(() => Boolean)
@@ -232,9 +233,8 @@ export class SalesResolver {
                     buyer: buyer.id,
                     company: sale.company,
                     share_amount: sale.share_amount
-                });
+                }).save();
                 const t_id = t.id;
-                t.save();
                 const c = await Company.findOne({
                     id: sale.company
                 });
@@ -268,5 +268,25 @@ export class SalesResolver {
     @Query(() => [Sale])
     async getAllSales() {
         return await Sale.find();
+    }
+
+    @Mutation(() => Boolean!)
+    async update() {
+        const comps = await Company.find({});
+        for(let i = 0; i < comps.length; i++) {
+            let c = comps[i];
+            let sales;
+            if(c.good) {
+                sales = (Math.random() * 50) + 10
+            } else {
+                sales = (Math.random() * 10)
+            }
+            await Company.update({
+                id: c.id
+            }, {
+                revenue: Math.round(c.revenue + (c.marginal_revenue * sales))
+            }) 
+        }
+        return true;
     }
 }

@@ -15,6 +15,10 @@ export class Company extends BaseEntity {
     @Field(() => Int)
     @Column("int")
     revenue: number;
+    
+    @Field(() => Int)
+    @Column("int")
+    marginal_revenue:number;
 
     @Field(() => Int)
     @Column("int")
